@@ -156,6 +156,8 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebChromeClient(new WebChromeClient());
 
         //webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        TVUrls.LoadTvUrlJson(this);
+
         // 加载初始网页
         loadLiveUrl();
     }
@@ -166,7 +168,7 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("选择频道");
         // 设置频道列表项
-        builder.setItems(channelNames, (dialog, which) -> {
+        builder.setSingleChoiceItems(channelNames, currentLiveIndex, (dialog, which) -> {
             if(which==0){
                 webView.reload();
             }else {
@@ -175,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
                 loadLiveUrl();
                 saveCurrentLiveIndex(); // 保存当前位置
             }
+            dialog.dismiss();
         });
 
         // 显示对话框
@@ -248,9 +251,12 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void loadLiveUrl() {
-        if (currentLiveIndex >= 0 && currentLiveIndex < liveUrls.length) {
+        int length = liveUrls.length;
+        if (currentLiveIndex >= 0 && currentLiveIndex < length) {
             webView.setInitialScale(getMinimumScale());
             var url=liveUrls[currentLiveIndex];
+            if (url.contains("reload"))
+                return;
             webView.loadUrl(url);
             if(url.startsWith("https://www.yangshipin.cn")) {
                 ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
