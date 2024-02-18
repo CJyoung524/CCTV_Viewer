@@ -7,8 +7,15 @@ import static com.eanyatonic.cctvViewer.TVUrls.liveUrls;
 import static java.lang.Thread.sleep;
 
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.Point;
+import android.graphics.drawable.ColorDrawable;
 import android.net.http.SslError;
 import android.os.Looper;
+import android.view.Display;
+import android.view.Gravity;
+import android.view.Window;
+import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
@@ -28,6 +35,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -119,9 +127,9 @@ public class MainActivity extends AppCompatActivity {
                 //doFullScren(view,true);
                 view.evaluateJavascript(
                         """
-                                     
                                      function af(){ 
-                                         var fullscreenBtn = document.querySelector('#player_pagefullscreen_yes_player')||document.querySelector('.videoFull');
+                                         var fullscreenBtn = document.querySelector('#player_pagefullscreen_yes_player')
+                                         ||document.querySelector('.videoFull')
                                          if(fullscreenBtn!=null){
                                             //alert(fullscreenBtn)
                                           fullscreenBtn.click();
@@ -168,20 +176,42 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("选择频道");
         // 设置频道列表项
-        builder.setSingleChoiceItems(channelNames, currentLiveIndex, (dialog, which) -> {
+        builder.setSingleChoiceItems(new ArrayAdapter<>(this, R.layout.your_list_item_layout, channelNames), currentLiveIndex, (dialogInterface, which) -> {
             if(which==0){
                 webView.reload();
-            }else {
+            } else {
                 // 在此处处理选择的频道
                 currentLiveIndex = which;
                 loadLiveUrl();
                 saveCurrentLiveIndex(); // 保存当前位置
             }
-            dialog.dismiss();
+            dialogInterface.dismiss();
         });
 
+        // 创建对话框
+        AlertDialog dialog = builder.create();
+
         // 显示对话框
-        builder.create().show();
+        dialog.show();
+
+        // 获取窗口对象和参数对象以修改布局设置
+        Window dialogWindow = dialog.getWindow();
+        WindowManager.LayoutParams lp = dialogWindow.getAttributes();
+
+        // 获取屏幕宽度和高度
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+
+        // Set dialog width to a percentage of the screen width
+        lp.width = (int) (size.x * 0.3); // 80% of screen width
+        lp.gravity = Gravity.LEFT;
+
+        // Apply the updated layout parameters
+        dialogWindow.setAttributes(lp);
+
+        // Set the background of the dialog to transparent
+        //dialogWindow.setBackgroundDrawable(new ColorDrawable(Color.argb(50, 0, 0, 0))); // 50% transparent
     }
 
     @Override
@@ -253,12 +283,13 @@ public class MainActivity extends AppCompatActivity {
     private void loadLiveUrl() {
         int length = liveUrls.length;
         if (currentLiveIndex >= 0 && currentLiveIndex < length) {
-            webView.setInitialScale(getMinimumScale());
+            int scale = getMinimumScale();
+            webView.setInitialScale(scale);
             var url=liveUrls[currentLiveIndex];
             if (url.contains("reload"))
                 return;
             webView.loadUrl(url);
-            if(url.startsWith("https://www.yangshipin.cn")) {
+            if(url.startsWith("https://www.yangshipin.cn") || url.startsWith("https://www.gdtv.cn")) {
                 ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
                 // 定义要执行的任务
